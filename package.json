@@ -1,0 +1,22 @@
+{
+  "name": "agent-payments-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Minimal, real anchor from a completed Open Payments payment to a caller-supplied audit trail. Polling-based (Open Payments has no client-facing webhook). Not affiliated with the Interledger Foundation.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/test/*.test.js"
+  },
+  "dependencies": {
+    "@interledger/open-payments": "7.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "@types/node": "^22.7.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
