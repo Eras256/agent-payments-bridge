@@ -39,10 +39,30 @@ Verified against the same spec files, not assumed:
 - **Incoming payment**: `completed: boolean` — direct field.
 - **Outgoing payment**: no `completed` field. Derived here as
   `!failed && sentAmount >= receiveAmount`, comparing `BigInt` values only
-  when `assetCode`/`assetScale` match between the two amounts. The spec
-  does not document what to do when they don't match (e.g. a cross-currency
-  payment) — this package reports that case as `'indeterminate'` rather
-  than guessing an FX rate. See `src/completion.ts`.
+  when `assetCode`/`assetScale` match between the two amounts. When they
+  don't match (a cross-currency payment) this package reports
+  `'indeterminate'` rather than guessing an FX rate. See
+  `src/completion.ts`.
+
+Why `indeterminate` is the right answer there, read from Rafiki `main` on
+2026-09-29 (`packages/backend/src/open_payments/payment/outgoing/model.ts`
+and `.../quote/model.ts`): `sentAmount` is denominated in the payment's own
+asset, which is the quote's asset, i.e. the **sender's**, and it excludes
+fees (in the real run under `evidence/`: `sentAmount` 500, `receiveAmount`
+500, `debitAmount` 610). `receiveAmount` is denominated in the
+**receiver's** asset. For a cross-currency payment the two are different
+units, so no comparison of them can mean "done". I have not run a
+cross-currency payment; this comes from reading the getters.
+
+**Known limitation.** `failed` is true only for Cancelled/Failed, so a
+COMPLETED and a still-SENDING payment both read `failed: false`. Reading
+`outgoing/lifecycle.ts`, a payment can end COMPLETED with
+`sentAmount < receiveAmount` when its receiver is missing or no longer
+active by the time it is processed. This package would keep polling that
+payment until `timeoutMs` and return `pending`, never anchoring it. That
+fails safe (nothing is recorded as complete on a guess) but it is a false
+negative. Not reproduced. This is raised upstream as a question in
+[interledger/rafiki#3984](https://github.com/interledger/rafiki/issues/3984).
 
 ## What "anchored" does and doesn't mean
 
